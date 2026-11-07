@@ -3,21 +3,26 @@
 import random
 
 from rpg import combate, interface, itens, mundo
+from rpg.combate import Estatisticas
 from rpg.personagem import Heroi, Inimigo, criar_heroi, criar_inimigo
 
-CHEFE = "orc"  # na etapa 5 vira o dragão
+CHEFE = "dragao"
 
 
-def batalha(heroi: Heroi, inimigo: Inimigo, local: str, rng: random.Random) -> bool:
+def batalha(heroi: Heroi, inimigo: Inimigo, local: str, est: Estatisticas, rng: random.Random) -> bool:
     """Roda uma batalha até alguém cair. Retorna True se o herói venceu."""
     turno = 1
     log: list[str] = []  # frases do último turno, mostradas no painel
     while heroi.vivo and inimigo.vivo:
         interface.tela_turno(heroi, inimigo, local, turno, log)
         escolha = interface.escolher_acao(heroi)
-        log = [interface.texto(combate.turno_heroi(heroi, inimigo, escolha, rng))]
+        resultados = [combate.turno_heroi(heroi, inimigo, escolha, rng)]
         if inimigo.vivo:
-            log.append(interface.texto(combate.turno_inimigo(inimigo, heroi, rng)))
+            resultados.append(combate.turno_inimigo(inimigo, heroi, rng))
+        for r in resultados:
+            est.registrar(r, heroi.nome)
+        log = [interface.texto(r) for r in resultados]
+        est.turnos += 1
         turno += 1
 
     # Mostra a tela uma última vez, para o jogador ver o golpe final.
@@ -25,15 +30,17 @@ def batalha(heroi: Heroi, inimigo: Inimigo, local: str, rng: random.Random) -> b
     return heroi.vivo
 
 
-def lutar(heroi: Heroi, tipo_inimigo: str, local: str, rng: random.Random) -> bool:
+def lutar(heroi: Heroi, tipo_inimigo: str, local: str, est: Estatisticas, rng: random.Random) -> bool:
     """Apresenta o inimigo, luta e entrega as recompensas."""
     inimigo = criar_inimigo(tipo_inimigo)
     interface.anunciar_inimigo(inimigo, local)
-    if not batalha(heroi, inimigo, local, rng):
+    if not batalha(heroi, inimigo, local, est, rng):
         return False
+    est.monstros += 1
     heroi.ouro += inimigo.ouro
     subidas = heroi.ganhar_xp(inimigo.xp)
-    interface.vitoria_batalha(inimigo, heroi, subidas)
+    if tipo_inimigo != CHEFE:  # depois do chefe vem direto a tela final
+        interface.vitoria_batalha(inimigo, heroi, subidas)
     return True
 
 
@@ -47,38 +54,53 @@ def visitar_loja(heroi: Heroi) -> None:
         mensagem = interface.texto_compra(itens.comprar(heroi, item), item)
 
 
-def entrar_na_sala(heroi: Heroi, sala: mundo.Sala, local: str, rng: random.Random) -> bool:
+def entrar_na_sala(heroi: Heroi, sala: mundo.Sala, local: str, est: Estatisticas, rng: random.Random) -> bool:
     """Resolve a sala escolhida. Retorna False se o herói morreu."""
     if sala.tipo == "combate":
-        return lutar(heroi, sala.inimigo, local, rng)
+        return lutar(heroi, sala.inimigo, local, est, rng)
     if sala.tipo == "loja":
         visitar_loja(heroi)
         return True
-    interface.mostrar_evento(mundo.resolver_sala(sala, heroi, rng), heroi)
+    resultado = mundo.resolver_sala(sala, heroi, rng)
+    if resultado.tipo == "armadilha":
+        est.dano_sofrido += resultado.valor
+    interface.mostrar_evento(resultado, heroi)
     return heroi.vivo  # uma armadilha também pode derrubar o herói
 
 
-def main() -> None:
+def jogar() -> None:
+    """Uma partida completa, do nome do herói até a tela final."""
     rng = random.Random()  # sem semente: cada partida é diferente
+    est = Estatisticas()
     interface.titulo()
     heroi = criar_heroi(interface.pedir_nome())
     masmorra = mundo.gerar_masmorra(rng)
 
     for andar, portas in enumerate(masmorra, start=1):
+        local = f"Andar {andar}/{len(masmorra)}"
         sala = interface.escolher_porta(heroi, andar, len(masmorra), portas)
-        if not entrar_na_sala(heroi, sala, f"Andar {andar}/{len(masmorra)}", rng):
-            interface.fim_de_jogo(venceu=False, heroi=heroi)
+        if not entrar_na_sala(heroi, sala, local, est, rng):
+            interface.fim_de_jogo(False, heroi, est, local)
             return
 
     # Antes do chefe: um acampamento com loja garantida.
     interface.chegada_ao_chefe()
     visitar_loja(heroi)
-    venceu = lutar(heroi, CHEFE, "Covil do chefe", rng)
-    interface.fim_de_jogo(venceu=venceu, heroi=heroi)
+    local = "Covil do Dragão"
+    venceu = lutar(heroi, CHEFE, local, est, rng)
+    interface.fim_de_jogo(venceu, heroi, est, local)
+
+
+def main() -> None:
+    while True:
+        jogar()
+        if not interface.jogar_de_novo():
+            interface.console.print("[dim]Até a próxima, aventureiro.[/]")
+            return
 
 
 if __name__ == "__main__":
     try:
         main()
-    except KeyboardInterrupt:  # Ctrl+C sai sem mostrar erro feio
+    except (KeyboardInterrupt, EOFError):  # Ctrl+C (ou fim da entrada) sai sem erro feio
         interface.console.print("\n[dim]Até a próxima, aventureiro.[/]")

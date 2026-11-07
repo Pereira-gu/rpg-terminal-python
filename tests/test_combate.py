@@ -112,3 +112,42 @@ def test_acao_invalida_gera_erro():
     heroi, rato = criar_heroi("Teste"), criar_inimigo("rato")
     with pytest.raises(ValueError):
         combate.turno_heroi(heroi, rato, "dançar", DadoViciado())
+
+
+def test_sopro_do_dragao_triplica_a_forca():
+    heroi, dragao = criar_heroi("Teste"), criar_inimigo("dragao")
+    dragao.preparando = True
+    resultado = combate.turno_inimigo(dragao, heroi, DadoViciado())
+    assert resultado.detalhe == "sopro de fogo"
+    assert resultado.valor == dragao.ataque * 3 - heroi.defesa
+
+
+def test_furia_acontece_uma_vez_na_metade_da_vida():
+    heroi, dragao = criar_heroi("Teste"), criar_inimigo("dragao")
+    ataque_inicial = dragao.ataque
+    dragao.receber_dano(dragao.vida_max // 2 + 1)  # abaixo da metade
+    assert combate.turno_inimigo(dragao, heroi, DadoViciado()).acao == "furia"
+    assert dragao.ataque == ataque_inicial + combate.BONUS_FURIA
+    # no turno seguinte ele não enfurece de novo: ataca
+    assert combate.turno_inimigo(dragao, heroi, DadoViciado()).acao == "atacar"
+    assert dragao.ataque == ataque_inicial + combate.BONUS_FURIA
+
+
+def test_sem_furia_acima_da_metade_da_vida():
+    heroi, dragao = criar_heroi("Teste"), criar_inimigo("dragao")
+    assert combate.turno_inimigo(dragao, heroi, DadoViciado()).acao == "atacar"
+    assert not dragao.enfurecido
+
+
+def test_monstros_comuns_nao_tem_furia():
+    heroi, orc = criar_heroi("Teste"), criar_inimigo("orc")
+    orc.receber_dano(orc.vida_max - 1)
+    assert combate.turno_inimigo(orc, heroi, DadoViciado()).acao == "atacar"
+
+
+def test_estatisticas_separam_dano_causado_e_sofrido():
+    est = combate.Estatisticas()
+    est.registrar(combate.Resultado("Herói", "atacar", "Rato", 8), "Herói")
+    est.registrar(combate.Resultado("Rato", "golpe_pesado", "Herói", 5), "Herói")
+    est.registrar(combate.Resultado("Herói", "pocao", valor=20), "Herói")
+    assert (est.dano_causado, est.dano_sofrido, est.pocoes_usadas) == (8, 5, 1)

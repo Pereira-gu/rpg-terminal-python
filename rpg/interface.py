@@ -10,12 +10,14 @@ Organização da tela a cada turno (a tela é limpa antes):
     4. menu de ações com a explicação de cada uma
 """
 
+import random
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
-from rpg.combate import CURA_POCAO, Resultado
+from rpg.combate import CURA_POCAO, Estatisticas, Resultado
 from rpg.itens import LIMITE_POCOES, Item
 from rpg.mundo import ResultadoSala, Sala
 from rpg.personagem import BONUS_POR_NIVEL, Heroi, Inimigo, Personagem, SubidaDeNivel
@@ -78,9 +80,12 @@ def texto(r: Resultado) -> str:
     if r.acao == "sem_pocao":
         return f"[yellow]🧪 {r.ator} procura uma poção, mas a bolsa está vazia! Turno perdido.[/]"
     if r.acao == "preparar":
-        return f"[bold yellow]⚠  {r.ator} se prepara para um golpe pesado![/]"
+        return f"[bold yellow]⚠  {r.ator} se prepara para um {r.detalhe}![/]"
     if r.acao == "golpe_pesado":
-        return f"💥 {r.ator} solta o GOLPE PESADO em {r.alvo}: [bold red]{r.valor}[/] de dano.{critico}"
+        icone = "🔥" if "fogo" in r.detalhe else "💥"
+        return f"{icone} {r.ator} solta o {r.detalhe.upper()} em {r.alvo}: [bold red]{r.valor}[/] de dano.{critico}"
+    if r.acao == "furia":
+        return f"[bold red]😡 {r.ator} ruge de fúria! Ataque +{r.valor} até o fim da luta.[/]"
     return ""
 
 
@@ -100,7 +105,9 @@ def tela_turno(heroi: Heroi, inimigo: Inimigo, local: str, turno: int, log: list
     )
     status.add_row(f"[bold red]{inimigo.nome}[/]", barra_vida(inimigo), "", "")
     if inimigo.preparando and inimigo.vivo:
-        status.add_row("", "[bold yellow]⚠ Golpe pesado no próximo turno![/]", "", "")
+        status.add_row("", f"[bold yellow]⚠ {inimigo.nome_golpe.capitalize()} no próximo turno![/]", "", "")
+    if inimigo.enfurecido and inimigo.vivo:
+        status.add_row("", "[bold red]😡 Enfurecido[/]", "", "")
     console.print(Panel(status, border_style="blue"))
 
     if log:
@@ -186,7 +193,9 @@ def chegada_ao_chefe() -> None:
     console.print(
         Panel.fit(
             "Depois do último andar, um acampamento abandonado e uma escada que desce.\n"
-            "Um mercador cansado oferece seus produtos antes da batalha final...",
+            "Lá de baixo vem um calor sufocante e o som de asas enormes.\n"
+            "Um mercador cansado oferece seus produtos antes da batalha final...\n\n"
+            "[dim]Dica: o dragão anuncia o sopro de fogo um turno antes, e fica furioso na metade da vida.[/]",
             title="🔥 Acampamento",
             border_style="yellow",
         )
@@ -236,10 +245,45 @@ def texto_compra(codigo: str, item: Item) -> str:
     }[codigo]
 
 
-def fim_de_jogo(venceu: bool, heroi: Heroi) -> None:
+DICAS_DERROTA = [
+    "Defenda quando o inimigo anunciar um golpe pesado: o dano cai 75%.",
+    "Lutar nos andares dá XP. Fugir de todas as lutas deixa o herói fraco para o dragão.",
+    "Guarde ouro para o acampamento: o machado e a cota de malha fazem diferença no fim.",
+    "Use a poção antes de a vida ficar crítica, não depois.",
+]
+
+
+def fim_de_jogo(venceu: bool, heroi: Heroi, est: Estatisticas, local: str) -> None:
+    pausar()  # deixa o jogador ver o último golpe antes de limpar a tela
+    console.clear()
     if venceu:
-        texto_final, cor = f"🏆 {heroi.nome} limpou a masmorra no nível {heroi.nivel}! Vitória!", "green"
+        titulo_final = (
+            "[bold yellow]🐉  O DRAGÃO ANCESTRAL CAIU!  🐉[/]\n\n"
+            f"{heroi.nome} é agora uma lenda da Masmorra de Pedra."
+        )
+        cor = "yellow"
     else:
-        texto_final, cor = f"💀 {heroi.nome} caiu em combate no nível {heroi.nivel}... Fim de jogo.", "red"
-    console.print()
-    console.print(Panel.fit(f"[bold]{texto_final}[/]", border_style=cor))
+        titulo_final = f"[bold red]💀  FIM DE JOGO  💀[/]\n\n{heroi.nome} caiu em: {local}."
+        cor = "red"
+    console.print(Panel(titulo_final, border_style=cor, padding=(1, 4)), justify="center")
+
+    tabela = Table(title="Sua jornada", show_header=False, padding=(0, 2))
+    linhas = [
+        ("Nível alcançado", heroi.nivel),
+        ("Monstros derrotados", est.monstros),
+        ("Turnos de combate", est.turnos),
+        ("Dano causado", est.dano_causado),
+        ("Dano sofrido", est.dano_sofrido),
+        ("Poções usadas", est.pocoes_usadas),
+        ("Ouro no bolso", heroi.ouro),
+    ]
+    for nome, valor in linhas:
+        tabela.add_row(nome, f"[bold]{valor}[/]")
+    console.print(tabela, justify="center")
+
+    if not venceu:
+        console.print(f"\n[dim]💡 Dica: {random.choice(DICAS_DERROTA)}[/]", justify="center")
+
+
+def jogar_de_novo() -> bool:
+    return Prompt.ask("\nJogar de novo?", choices=["s", "n"], default="n") == "s"

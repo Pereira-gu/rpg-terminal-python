@@ -23,7 +23,7 @@ python -m pytest
 - [x] **Etapa 2: Evolução.** XP, subir de nível e atributos que crescem.
 - [x] **Etapa 3: Itens.** Armas e armaduras, ouro e uma loja entre as batalhas.
 - [x] **Etapa 4: Exploração.** 5 andares com duas portas cada: um combate ou uma surpresa (tesouro, fonte, loja ou armadilha). No fim, um acampamento e o chefe.
-- [ ] **Etapa 5: Chefe final.** Um dragão com um ataque especial, e as telas de vitória e derrota.
+- [x] **Etapa 5: Chefe final.** O Dragão Ancestral, com sopro de fogo e fúria, as telas de vitória e derrota com estatísticas, e a opção de jogar de novo.
 - [ ] **Etapa 6: Portfólio.** README com prints, revisão de código e publicação no GitHub.
 
 ## Estrutura

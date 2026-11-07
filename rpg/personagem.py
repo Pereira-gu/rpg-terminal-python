@@ -121,6 +121,13 @@ class Inimigo(Personagem):
     ouro: int = 0
     # True quando o monstro está carregando um golpe pesado para o próximo turno.
     preparando: bool = False
+    # O golpe pesado é descrito por dados: cada monstro pode ter o seu.
+    chance_preparar: float = 0.30
+    multiplicador_pesado: int = 2
+    nome_golpe: str = "golpe pesado"
+    # Fúria: ao cair para metade da vida, o monstro fica mais forte (uma vez só).
+    furia: bool = False
+    enfurecido: bool = False
 
 
 # Os monstros ficam descritos como dados, não como código.
@@ -131,6 +138,12 @@ MODELOS_INIMIGOS = {
     "rato": dict(nome="Rato Gigante", vida_max=22, ataque=7, defesa=1, xp=12, ouro=15),
     "goblin": dict(nome="Goblin", vida_max=34, ataque=10, defesa=2, xp=18, ouro=25),
     "orc": dict(nome="Orc Brutamontes", vida_max=55, ataque=13, defesa=4, xp=30, ouro=40),
+    # O chefe final: sopro de fogo triplo e fúria na metade da vida.
+    # Calibrado com simulação: com estratégia vence ~85%; só atacando ~8%; fugindo das lutas ~1%.
+    "dragao": dict(
+        nome="Dragão Ancestral", vida_max=110, ataque=16, defesa=5, xp=100, ouro=0,
+        chance_preparar=0.35, multiplicador_pesado=3, nome_golpe="sopro de fogo", furia=True,
+    ),
 }
 
 

@@ -18,8 +18,8 @@ CHANCE_CRITICO = 0.10  # 10% de chance de dano dobrado
 VARIACAO_DANO = 2  # o dano varia de -2 a +2 a cada golpe
 CURA_POCAO = 20
 REDUCAO_DEFESA = 4  # defendendo, o dano é dividido por 4 (bloqueia 75%)
-CHANCE_PREPARAR = 0.30  # 30% de chance de o inimigo preparar um golpe pesado
-MULTIPLICADOR_PESADO = 2  # o golpe pesado tem o dobro da força
+BONUS_FURIA = 5  # ataque extra do monstro enfurecido
+# A chance e a força do golpe pesado agora ficam em cada Inimigo (personagem.py).
 
 
 @dataclass
@@ -27,10 +27,31 @@ class Resultado:
     """O que aconteceu em uma ação, para a interface descrever."""
 
     ator: str
-    acao: str  # "atacar", "defender", "pocao", "sem_pocao", "preparar" ou "golpe_pesado"
+    acao: str  # "atacar", "defender", "pocao", "sem_pocao", "preparar", "golpe_pesado" ou "furia"
     alvo: str = ""
     valor: int = 0  # dano causado ou vida curada
     critico: bool = False
+    detalhe: str = ""  # nome do golpe pesado ("sopro de fogo", por exemplo)
+
+
+@dataclass
+class Estatisticas:
+    """Números da partida, mostrados na tela final."""
+
+    monstros: int = 0
+    turnos: int = 0
+    dano_causado: int = 0
+    dano_sofrido: int = 0
+    pocoes_usadas: int = 0
+
+    def registrar(self, r: Resultado, nome_heroi: str) -> None:
+        if r.acao in ("atacar", "golpe_pesado"):
+            if r.ator == nome_heroi:
+                self.dano_causado += r.valor
+            else:
+                self.dano_sofrido += r.valor
+        elif r.acao == "pocao":
+            self.pocoes_usadas += 1
 
 
 def calcular_dano(
@@ -80,18 +101,26 @@ def turno_heroi(heroi: Heroi, inimigo: Personagem, escolha: str, rng: random.Ran
 
 
 def turno_inimigo(inimigo: Inimigo, heroi: Heroi, rng: random.Random) -> Resultado:
-    """O inimigo ataca normalmente, prepara um golpe pesado ou solta o golpe preparado.
+    """Decide e executa a ação do inimigo, nesta ordem de prioridade:
 
-    O golpe pesado é anunciado um turno antes: é a deixa para o jogador defender.
+    1. soltar o golpe pesado que estava preparando;
+    2. entrar em fúria, se tem fúria e caiu para metade da vida (gasta o turno);
+    3. com alguma chance, preparar um golpe pesado (anunciado um turno antes);
+    4. atacar normalmente.
     """
     if inimigo.preparando:
         inimigo.preparando = False
-        dano, critico = calcular_dano(inimigo, heroi, rng, MULTIPLICADOR_PESADO)
+        dano, critico = calcular_dano(inimigo, heroi, rng, inimigo.multiplicador_pesado)
         heroi.receber_dano(dano)
-        return Resultado(inimigo.nome, "golpe_pesado", heroi.nome, dano, critico)
+        return Resultado(inimigo.nome, "golpe_pesado", heroi.nome, dano, critico, inimigo.nome_golpe)
 
-    if rng.random() < CHANCE_PREPARAR:
+    if inimigo.furia and not inimigo.enfurecido and inimigo.vida <= inimigo.vida_max // 2:
+        inimigo.enfurecido = True
+        inimigo.ataque += BONUS_FURIA
+        return Resultado(inimigo.nome, "furia", valor=BONUS_FURIA)
+
+    if rng.random() < inimigo.chance_preparar:
         inimigo.preparando = True
-        return Resultado(inimigo.nome, "preparar")
+        return Resultado(inimigo.nome, "preparar", detalhe=inimigo.nome_golpe)
 
     return atacar(inimigo, heroi, rng)
