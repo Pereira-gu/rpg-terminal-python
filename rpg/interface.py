@@ -16,7 +16,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from rpg.combate import CURA_POCAO, Resultado
-from rpg.personagem import Heroi, Inimigo, Personagem
+from rpg.personagem import BONUS_POR_NIVEL, Heroi, Inimigo, Personagem, SubidaDeNivel
 
 console = Console()
 
@@ -87,10 +87,15 @@ def tela_turno(heroi: Heroi, inimigo: Inimigo, batalha: int, total: int, turno: 
     console.rule(f"[bold]Batalha {batalha}/{total} · Turno {turno}[/]")
 
     status = Table(show_header=False, box=None, padding=(0, 2))
-    status.add_row(f"[bold cyan]{heroi.nome}[/]", barra_vida(heroi), f"🧪 {heroi.pocoes} poções")
-    status.add_row(f"[bold red]{inimigo.nome}[/]", barra_vida(inimigo), "")
+    status.add_row(
+        f"[bold cyan]{heroi.nome}[/] [dim]Nv {heroi.nivel}[/]",
+        barra_vida(heroi),
+        f"🧪 {heroi.pocoes}",
+        f"⭐ {heroi.xp}/{heroi.xp_para_proximo} XP",
+    )
+    status.add_row(f"[bold red]{inimigo.nome}[/]", barra_vida(inimigo), "", "")
     if inimigo.preparando and inimigo.vivo:
-        status.add_row("", "[bold yellow]⚠ Golpe pesado no próximo turno![/]", "")
+        status.add_row("", "[bold yellow]⚠ Golpe pesado no próximo turno![/]", "", "")
     console.print(Panel(status, border_style="blue"))
 
     if log:
@@ -107,15 +112,30 @@ def escolher_acao(heroi: Heroi) -> str:
     return ACOES[numero]
 
 
-def vitoria_batalha(inimigo: Inimigo) -> None:
-    console.print(f"\n[bold green]✔ {inimigo.nome} foi derrotado![/]")
+def vitoria_batalha(inimigo: Inimigo, heroi: Heroi, subidas: list[SubidaDeNivel]) -> None:
+    console.print(f"\n[bold green]✔ {inimigo.nome} foi derrotado![/]  [yellow]+{inimigo.xp} XP[/]")
+    b = BONUS_POR_NIVEL
+    for s in subidas:
+        console.print(
+            Panel.fit(
+                f"[bold yellow]⬆  {heroi.nome} subiu para o nível {s.nivel}![/]\n"
+                f"Vida máx +{b['vida_max']} · Ataque +{b['ataque']} · Defesa +{b['defesa']}\n"
+                f"[green]Recuperou {s.curado} de vida[/]",
+                border_style="yellow",
+            )
+        )
+    if subidas:  # mostra os atributos finais uma vez só
+        console.print(
+            f"[dim]Agora: Vida {heroi.vida}/{heroi.vida_max} · "
+            f"Ataque {heroi.ataque} · Defesa {heroi.defesa}[/]"
+        )
     pausar()
 
 
 def fim_de_jogo(venceu: bool, heroi: Heroi) -> None:
     if venceu:
-        texto_final, cor = f"🏆 {heroi.nome} limpou a masmorra! Vitória!", "green"
+        texto_final, cor = f"🏆 {heroi.nome} limpou a masmorra no nível {heroi.nivel}! Vitória!", "green"
     else:
-        texto_final, cor = f"💀 {heroi.nome} caiu em combate... Fim de jogo.", "red"
+        texto_final, cor = f"💀 {heroi.nome} caiu em combate no nível {heroi.nivel}... Fim de jogo.", "red"
     console.print()
     console.print(Panel.fit(f"[bold]{texto_final}[/]", border_style=cor))

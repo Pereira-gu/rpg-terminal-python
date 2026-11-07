@@ -19,8 +19,8 @@ python -m pytest
 
 ## Roteiro
 
-- [x] **Etapa 1: Combate.** Herói contra 3 monstros, com as ações atacar, defender e usar poção.
-- [ ] **Etapa 2: Evolução.** XP, subir de nível e atributos que crescem.
+- [x] **Etapa 1: Combate.** Herói contra 3 monstros, com as ações atacar, defender e usar poção. O inimigo anuncia golpes pesados, que podem ser bloqueados com a defesa.
+- [x] **Etapa 2: Evolução.** XP, subir de nível e atributos que crescem.
 - [ ] **Etapa 3: Itens.** Inventário, armas e armaduras, ouro e loja.
 - [ ] **Etapa 4: Exploração.** Salas da masmorra, escolha de caminho e eventos.
 - [ ] **Etapa 5: Chefe final.** Um dragão com um ataque especial, e as telas de vitória e derrota.

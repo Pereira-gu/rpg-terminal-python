@@ -36,7 +36,8 @@ def main() -> None:
         if not batalha(heroi, inimigo, numero, len(SEQUENCIA_INIMIGOS), rng):
             interface.fim_de_jogo(venceu=False, heroi=heroi)
             return
-        interface.vitoria_batalha(inimigo)
+        subidas = heroi.ganhar_xp(inimigo.xp)
+        interface.vitoria_batalha(inimigo, heroi, subidas)
 
     interface.fim_de_jogo(venceu=True, heroi=heroi)
 
