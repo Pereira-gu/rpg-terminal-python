@@ -6,6 +6,8 @@ campos. Isso deixa as classes curtas e fáceis de ler.
 
 from dataclasses import dataclass, field
 
+from rpg.itens import Item
+
 
 @dataclass
 class Personagem:
@@ -26,6 +28,16 @@ class Personagem:
     @property
     def vivo(self) -> bool:
         return self.vida > 0
+
+    # "ataque" e "defesa" são os valores BASE. O combate usa os valores TOTAIS,
+    # que no herói somam o equipamento. Inimigos não têm equipamento: total = base.
+    @property
+    def ataque_total(self) -> int:
+        return self.ataque
+
+    @property
+    def defesa_total(self) -> int:
+        return self.defesa
 
     def receber_dano(self, dano: int) -> int:
         """Tira vida sem deixar ficar negativa. Retorna o dano aplicado."""
@@ -59,6 +71,18 @@ class Heroi(Personagem):
     pocoes: int = 3
     nivel: int = 1
     xp: int = 0  # XP acumulado no nível atual
+    ouro: int = 10
+    arma: Item | None = None  # None = lutando com as mãos/arma básica
+    armadura: Item | None = None
+
+    # Sobrescreve (override) as versões de Personagem para somar o equipamento.
+    @property
+    def ataque_total(self) -> int:
+        return self.ataque + (self.arma.bonus if self.arma else 0)
+
+    @property
+    def defesa_total(self) -> int:
+        return self.defesa + (self.armadura.bonus if self.armadura else 0)
 
     @property
     def xp_para_proximo(self) -> int:
@@ -91,9 +115,10 @@ class Heroi(Personagem):
 
 @dataclass
 class Inimigo(Personagem):
-    """Um monstro. O XP é o que o herói ganha ao derrotá-lo."""
+    """Um monstro. XP e ouro são o que o herói ganha ao derrotá-lo."""
 
     xp: int = 10
+    ouro: int = 0
     # True quando o monstro está carregando um golpe pesado para o próximo turno.
     preparando: bool = False
 
@@ -103,9 +128,9 @@ class Inimigo(Personagem):
 MODELOS_INIMIGOS = {
     # Valores calibrados com 5.000 partidas simuladas: quem só ataca vence ~45%,
     # quem defende do golpe pesado e usa poções na hora certa vence ~99%.
-    "rato": dict(nome="Rato Gigante", vida_max=22, ataque=7, defesa=1, xp=12),
-    "goblin": dict(nome="Goblin", vida_max=34, ataque=10, defesa=2, xp=18),
-    "orc": dict(nome="Orc Brutamontes", vida_max=55, ataque=13, defesa=4, xp=30),
+    "rato": dict(nome="Rato Gigante", vida_max=22, ataque=7, defesa=1, xp=12, ouro=15),
+    "goblin": dict(nome="Goblin", vida_max=34, ataque=10, defesa=2, xp=18, ouro=25),
+    "orc": dict(nome="Orc Brutamontes", vida_max=55, ataque=13, defesa=4, xp=30, ouro=40),
 }
 
 

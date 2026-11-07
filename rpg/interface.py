@@ -16,6 +16,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from rpg.combate import CURA_POCAO, Resultado
+from rpg.itens import LIMITE_POCOES, Item
 from rpg.personagem import BONUS_POR_NIVEL, Heroi, Inimigo, Personagem, SubidaDeNivel
 
 console = Console()
@@ -93,6 +94,9 @@ def tela_turno(heroi: Heroi, inimigo: Inimigo, batalha: int, total: int, turno: 
         f"🧪 {heroi.pocoes}",
         f"⭐ {heroi.xp}/{heroi.xp_para_proximo} XP",
     )
+    status.add_row(
+        "", f"[dim]⚔ Ataque {heroi.ataque_total} · 🛡 Defesa {heroi.defesa_total}[/]", f"💰 {heroi.ouro}", ""
+    )
     status.add_row(f"[bold red]{inimigo.nome}[/]", barra_vida(inimigo), "", "")
     if inimigo.preparando and inimigo.vivo:
         status.add_row("", "[bold yellow]⚠ Golpe pesado no próximo turno![/]", "", "")
@@ -113,7 +117,10 @@ def escolher_acao(heroi: Heroi) -> str:
 
 
 def vitoria_batalha(inimigo: Inimigo, heroi: Heroi, subidas: list[SubidaDeNivel]) -> None:
-    console.print(f"\n[bold green]✔ {inimigo.nome} foi derrotado![/]  [yellow]+{inimigo.xp} XP[/]")
+    console.print(
+        f"\n[bold green]✔ {inimigo.nome} foi derrotado![/]  "
+        f"[yellow]+{inimigo.xp} XP[/]  [yellow]+{inimigo.ouro} de ouro 💰[/]"
+    )
     b = BONUS_POR_NIVEL
     for s in subidas:
         console.print(
@@ -130,6 +137,48 @@ def vitoria_batalha(inimigo: Inimigo, heroi: Heroi, subidas: list[SubidaDeNivel]
             f"Ataque {heroi.ataque} · Defesa {heroi.defesa}[/]"
         )
     pausar()
+
+
+def _situacao(item: Item, heroi: Heroi) -> str:
+    """Etiqueta ao lado do item na loja."""
+    if item.tipo != "pocao" and getattr(heroi, item.tipo) == item:
+        return "[green]equipado[/]"
+    if heroi.ouro < item.preco:
+        return "[red]ouro insuficiente[/]"
+    return ""
+
+
+def tela_loja(heroi: Heroi, catalogo: list[Item], mensagem: str) -> Item | None:
+    """Mostra a loja e devolve o item escolhido, ou None se o jogador sair."""
+    console.clear()
+    tabela = Table(box=None, padding=(0, 2))
+    for coluna in ("#", "Item", "Efeito", "Preço", ""):
+        tabela.add_column(coluna, style="bold" if coluna == "#" else None)
+    for numero, item in enumerate(catalogo, start=1):
+        tabela.add_row(str(numero), item.nome, item.descricao, f"{item.preco} 💰", _situacao(item, heroi))
+    console.print(Panel(tabela, title="🏪 Loja do Ferreiro", subtitle=f"Você tem 💰 {heroi.ouro}", border_style="yellow"))
+
+    arma = heroi.arma.nome if heroi.arma else "nenhuma"
+    armadura = heroi.armadura.nome if heroi.armadura else "nenhuma"
+    console.print(
+        f"[dim]Equipado: ⚔ {arma} (ataque {heroi.ataque_total}) · "
+        f"🛡 {armadura} (defesa {heroi.defesa_total}) · 🧪 {heroi.pocoes}/{LIMITE_POCOES} poções[/]"
+    )
+    if mensagem:
+        console.print(mensagem)
+
+    opcoes = ["0"] + [str(n) for n in range(1, len(catalogo) + 1)]
+    escolha = Prompt.ask("\nNúmero do item para comprar, ou [bold]0[/] para seguir viagem", choices=opcoes, show_choices=False)
+    return None if escolha == "0" else catalogo[int(escolha) - 1]
+
+
+def texto_compra(codigo: str, item: Item) -> str:
+    return {
+        "ok": f"[green]✔ Você comprou {item.nome}![/]",
+        "sem_ouro": f"[red]✖ Ouro insuficiente para {item.nome}.[/]",
+        "bolsa_cheia": f"[yellow]✖ Sua bolsa já tem {LIMITE_POCOES} poções.[/]",
+        "nao_melhora": f"[yellow]✖ {item.nome} não é melhor do que o que você já usa.[/]",
+    }[codigo]
 
 
 def fim_de_jogo(venceu: bool, heroi: Heroi) -> None:

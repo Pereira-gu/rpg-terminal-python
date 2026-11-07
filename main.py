@@ -2,7 +2,7 @@
 
 import random
 
-from rpg import combate, interface
+from rpg import combate, interface, itens
 from rpg.personagem import Heroi, Inimigo, criar_heroi, criar_inimigo
 
 SEQUENCIA_INIMIGOS = ["rato", "goblin", "orc"]
@@ -25,6 +25,16 @@ def batalha(heroi: Heroi, inimigo: Inimigo, numero: int, total: int, rng: random
     return heroi.vivo
 
 
+def visitar_loja(heroi: Heroi) -> None:
+    """Fica na loja até o jogador escolher sair."""
+    mensagem = ""
+    while True:
+        item = interface.tela_loja(heroi, itens.CATALOGO, mensagem)
+        if item is None:
+            return
+        mensagem = interface.texto_compra(itens.comprar(heroi, item), item)
+
+
 def main() -> None:
     rng = random.Random()  # sem semente: cada partida é diferente
     interface.titulo()
@@ -36,8 +46,11 @@ def main() -> None:
         if not batalha(heroi, inimigo, numero, len(SEQUENCIA_INIMIGOS), rng):
             interface.fim_de_jogo(venceu=False, heroi=heroi)
             return
+        heroi.ouro += inimigo.ouro
         subidas = heroi.ganhar_xp(inimigo.xp)
         interface.vitoria_batalha(inimigo, heroi, subidas)
+        if numero < len(SEQUENCIA_INIMIGOS):  # depois da última batalha não há loja
+            visitar_loja(heroi)
 
     interface.fim_de_jogo(venceu=True, heroi=heroi)
 

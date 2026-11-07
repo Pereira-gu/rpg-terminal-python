@@ -21,7 +21,7 @@ python -m pytest
 
 - [x] **Etapa 1: Combate.** Herói contra 3 monstros, com as ações atacar, defender e usar poção. O inimigo anuncia golpes pesados, que podem ser bloqueados com a defesa.
 - [x] **Etapa 2: Evolução.** XP, subir de nível e atributos que crescem.
-- [ ] **Etapa 3: Itens.** Inventário, armas e armaduras, ouro e loja.
+- [x] **Etapa 3: Itens.** Armas e armaduras, ouro e uma loja entre as batalhas.
 - [ ] **Etapa 4: Exploração.** Salas da masmorra, escolha de caminho e eventos.
 - [ ] **Etapa 5: Chefe final.** Um dragão com um ataque especial, e as telas de vitória e derrota.
 - [ ] **Etapa 6: Portfólio.** README com prints, revisão de código e publicação no GitHub.
@@ -32,6 +32,7 @@ python -m pytest
 main.py            ponto de entrada: monta o jogo e roda o loop
 rpg/personagem.py  classes Personagem, Heroi, Inimigo e os modelos de monstros
 rpg/combate.py     regras do combate (lógica pura, sem print/input)
+rpg/itens.py       catálogo da loja e regra de compra
 rpg/interface.py   tudo que aparece na tela (rich)
 tests/             testes automáticos com pytest
 ```

@@ -37,11 +37,11 @@ def calcular_dano(
     atacante: Personagem, defensor: Personagem, rng: random.Random, multiplicador: int = 1
 ) -> tuple[int, bool]:
     """Retorna (dano, foi_critico). O dano mínimo é 1, para todo golpe contar."""
-    dano = (atacante.ataque + rng.randint(-VARIACAO_DANO, VARIACAO_DANO)) * multiplicador
+    dano = (atacante.ataque_total + rng.randint(-VARIACAO_DANO, VARIACAO_DANO)) * multiplicador
     critico = rng.random() < CHANCE_CRITICO
     if critico:
         dano *= 2
-    dano -= defensor.defesa
+    dano -= defensor.defesa_total
     if defensor.defendendo:
         dano //= REDUCAO_DEFESA
     return max(1, dano), critico
