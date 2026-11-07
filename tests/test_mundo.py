@@ -32,7 +32,8 @@ def test_todo_andar_tem_exatamente_um_combate(semente):
 
 def test_monstros_ficam_mais_fortes_no_fundo():
     assert mundo.inimigo_do_andar(1) == "rato"
-    assert mundo.inimigo_do_andar(mundo.ANDARES) == "goblin"
+    assert mundo.inimigo_do_andar(3) == "goblin"
+    assert mundo.inimigo_do_andar(mundo.ANDARES) == "orc"
 
 
 def test_tesouro_da_ouro():

@@ -44,9 +44,11 @@ class Estatisticas:
     dano_sofrido: int = 0
     pocoes_usadas: int = 0
 
-    def registrar(self, r: Resultado, nome_heroi: str) -> None:
+    def registrar(self, r: Resultado, do_heroi: bool) -> None:
+        # do_heroi vem de quem chamou, e não da comparação de nomes:
+        # assim um herói chamado "Goblin" não confunde a contagem.
         if r.acao in ("atacar", "golpe_pesado"):
-            if r.ator == nome_heroi:
+            if do_heroi:
                 self.dano_causado += r.valor
             else:
                 self.dano_sofrido += r.valor

@@ -49,7 +49,11 @@ class ResultadoSala:
 
 def inimigo_do_andar(andar: int) -> str:
     """Quanto mais fundo, mais forte o monstro."""
-    return "rato" if andar <= 2 else "goblin"
+    if andar <= 2:
+        return "rato"
+    if andar <= 4:
+        return "goblin"
+    return "orc"
 
 
 def gerar_masmorra(rng: random.Random, andares: int = ANDARES) -> list[tuple[Sala, Sala]]:

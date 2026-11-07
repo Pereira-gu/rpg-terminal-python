@@ -16,12 +16,13 @@ def batalha(heroi: Heroi, inimigo: Inimigo, local: str, est: Estatisticas, rng: 
     while heroi.vivo and inimigo.vivo:
         interface.tela_turno(heroi, inimigo, local, turno, log)
         escolha = interface.escolher_acao(heroi)
-        resultados = [combate.turno_heroi(heroi, inimigo, escolha, rng)]
+        r_heroi = combate.turno_heroi(heroi, inimigo, escolha, rng)
+        est.registrar(r_heroi, do_heroi=True)
+        log = [interface.texto(r_heroi)]
         if inimigo.vivo:
-            resultados.append(combate.turno_inimigo(inimigo, heroi, rng))
-        for r in resultados:
-            est.registrar(r, heroi.nome)
-        log = [interface.texto(r) for r in resultados]
+            r_inimigo = combate.turno_inimigo(inimigo, heroi, rng)
+            est.registrar(r_inimigo, do_heroi=False)
+            log.append(interface.texto(r_inimigo))
         est.turnos += 1
         turno += 1
 

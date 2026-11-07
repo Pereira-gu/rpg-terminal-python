@@ -147,7 +147,8 @@ def test_monstros_comuns_nao_tem_furia():
 
 def test_estatisticas_separam_dano_causado_e_sofrido():
     est = combate.Estatisticas()
-    est.registrar(combate.Resultado("Herói", "atacar", "Rato", 8), "Herói")
-    est.registrar(combate.Resultado("Rato", "golpe_pesado", "Herói", 5), "Herói")
-    est.registrar(combate.Resultado("Herói", "pocao", valor=20), "Herói")
+    # Herói com o mesmo nome do monstro: a contagem não pode se confundir.
+    est.registrar(combate.Resultado("Rato", "atacar", "Rato", 8), do_heroi=True)
+    est.registrar(combate.Resultado("Rato", "golpe_pesado", "Rato", 5), do_heroi=False)
+    est.registrar(combate.Resultado("Rato", "pocao", valor=20), do_heroi=True)
     assert (est.dano_causado, est.dano_sofrido, est.pocoes_usadas) == (8, 5, 1)

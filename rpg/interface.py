@@ -115,13 +115,17 @@ def tela_turno(heroi: Heroi, inimigo: Inimigo, local: str, turno: int, log: list
 
 
 def escolher_acao(heroi: Heroi) -> str:
+    mostrar_menu(heroi)
+    numero = Prompt.ask("Sua ação", choices=list(ACOES), show_choices=False)
+    return ACOES[numero]
+
+
+def mostrar_menu(heroi: Heroi) -> None:
     console.print(
         "[bold][1] Atacar[/]    causa dano no inimigo\n"
         "[bold][2] Defender[/]  bloqueia 75% do próximo golpe (ótimo contra golpe pesado)\n"
         f"[bold][3] Poção[/]     cura até {CURA_POCAO} de vida (restam {heroi.pocoes})"
     )
-    numero = Prompt.ask("Sua ação", choices=list(ACOES), show_choices=False)
-    return ACOES[numero]
 
 
 def vitoria_batalha(inimigo: Inimigo, heroi: Heroi, subidas: list[SubidaDeNivel]) -> None:
@@ -156,6 +160,12 @@ def resumo_heroi(heroi: Heroi) -> str:
 
 
 def escolher_porta(heroi: Heroi, andar: int, total: int, portas: tuple[Sala, Sala]) -> Sala:
+    mostrar_portas(heroi, andar, total, portas)
+    escolha = Prompt.ask("Qual porta", choices=["1", "2"], show_choices=False)
+    return portas[int(escolha) - 1]
+
+
+def mostrar_portas(heroi: Heroi, andar: int, total: int, portas: tuple[Sala, Sala]) -> None:
     console.clear()
     console.rule(f"[bold]Andar {andar}/{total}[/]")
     console.print(resumo_heroi(heroi), "\n")
@@ -169,8 +179,6 @@ def escolher_porta(heroi: Heroi, andar: int, total: int, portas: tuple[Sala, Sal
         )
     )
     console.print("[dim]Dica: uma das portas sempre leva a um monstro (XP e ouro garantidos).[/]")
-    escolha = Prompt.ask("Qual porta", choices=["1", "2"], show_choices=False)
-    return portas[int(escolha) - 1]
 
 
 def mostrar_evento(r: ResultadoSala, heroi: Heroi) -> None:
