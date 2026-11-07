@@ -17,6 +17,7 @@ from rich.table import Table
 
 from rpg.combate import CURA_POCAO, Resultado
 from rpg.itens import LIMITE_POCOES, Item
+from rpg.mundo import ResultadoSala, Sala
 from rpg.personagem import BONUS_POR_NIVEL, Heroi, Inimigo, Personagem, SubidaDeNivel
 
 console = Console()
@@ -52,13 +53,13 @@ def pedir_nome() -> str:
     return nome.strip() or "Aldric"
 
 
-def anunciar_inimigo(inimigo: Inimigo, numero: int, total: int) -> None:
+def anunciar_inimigo(inimigo: Inimigo, local: str) -> None:
     console.clear()
     console.print(
         Panel.fit(
             f"[bold red]{inimigo.nome}[/] bloqueia o caminho!\n"
             f"[dim]Vida {inimigo.vida_max} · Ataque {inimigo.ataque} · Defesa {inimigo.defesa}[/]",
-            title=f"Batalha {numero}/{total}",
+            title=local,
             border_style="red",
         )
     )
@@ -83,9 +84,9 @@ def texto(r: Resultado) -> str:
     return ""
 
 
-def tela_turno(heroi: Heroi, inimigo: Inimigo, batalha: int, total: int, turno: int, log: list[str]) -> None:
+def tela_turno(heroi: Heroi, inimigo: Inimigo, local: str, turno: int, log: list[str]) -> None:
     console.clear()
-    console.rule(f"[bold]Batalha {batalha}/{total} · Turno {turno}[/]")
+    console.rule(f"[bold]{local} · Turno {turno}[/]")
 
     status = Table(show_header=False, box=None, padding=(0, 2))
     status.add_row(
@@ -136,6 +137,60 @@ def vitoria_batalha(inimigo: Inimigo, heroi: Heroi, subidas: list[SubidaDeNivel]
             f"[dim]Agora: Vida {heroi.vida}/{heroi.vida_max} · "
             f"Ataque {heroi.ataque} · Defesa {heroi.defesa}[/]"
         )
+    pausar()
+
+
+def resumo_heroi(heroi: Heroi) -> str:
+    """Uma linha com o essencial do herói, usada fora do combate."""
+    return (
+        f"[bold cyan]{heroi.nome}[/] Nv {heroi.nivel}  {barra_vida(heroi, 15)}  "
+        f"🧪 {heroi.pocoes}  💰 {heroi.ouro}  ⭐ {heroi.xp}/{heroi.xp_para_proximo}"
+    )
+
+
+def escolher_porta(heroi: Heroi, andar: int, total: int, portas: tuple[Sala, Sala]) -> Sala:
+    console.clear()
+    console.rule(f"[bold]Andar {andar}/{total}[/]")
+    console.print(resumo_heroi(heroi), "\n")
+    console.print(
+        Panel(
+            f"[bold][1] Porta da esquerda[/]  [italic]{portas[0].pista}[/]\n"
+            f"[bold][2] Porta da direita[/]   [italic]{portas[1].pista}[/]",
+            title="Duas portas à sua frente",
+            title_align="left",
+            border_style="magenta",
+        )
+    )
+    console.print("[dim]Dica: uma das portas sempre leva a um monstro (XP e ouro garantidos).[/]")
+    escolha = Prompt.ask("Qual porta", choices=["1", "2"], show_choices=False)
+    return portas[int(escolha) - 1]
+
+
+def mostrar_evento(r: ResultadoSala, heroi: Heroi) -> None:
+    console.clear()
+    if r.tipo == "tesouro":
+        texto_evento, cor = f"💰 Um baú esquecido! Você encontra [bold]{r.valor}[/] de ouro.", "yellow"
+    elif r.tipo == "fonte":
+        texto_evento, cor = f"💧 Uma fonte de águas claras. Você recupera [green]{r.valor}[/] de vida.", "cyan"
+    elif r.esquivou:
+        texto_evento, cor = "⚠  O chão cede, mas você pula para trás a tempo! Era uma armadilha.", "yellow"
+    else:
+        texto_evento, cor = f"🪤 Era uma armadilha! Lanças saem da parede: [red]{r.valor}[/] de dano.", "red"
+    console.print(Panel.fit(texto_evento, border_style=cor))
+    console.print(resumo_heroi(heroi))
+    pausar()
+
+
+def chegada_ao_chefe() -> None:
+    console.clear()
+    console.print(
+        Panel.fit(
+            "Depois do último andar, um acampamento abandonado e uma escada que desce.\n"
+            "Um mercador cansado oferece seus produtos antes da batalha final...",
+            title="🔥 Acampamento",
+            border_style="yellow",
+        )
+    )
     pausar()
 
 
