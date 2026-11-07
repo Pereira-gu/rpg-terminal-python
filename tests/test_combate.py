@@ -56,7 +56,7 @@ def test_golpe_pesado_dobra_a_forca_e_zera_preparo():
     orc.preparando = True
     resultado = combate.turno_inimigo(orc, heroi, DadoViciado())
     assert resultado.acao == "golpe_pesado"
-    assert resultado.valor == orc.ataque * 2 - heroi.defesa  # 18 - 3 = 15
+    assert resultado.valor == orc.ataque * 2 - heroi.defesa
     assert not orc.preparando
 
 
@@ -65,7 +65,7 @@ def test_defender_contra_golpe_pesado_compensa():
     orc.preparando = True
     combate.defender(heroi)
     resultado = combate.turno_inimigo(orc, heroi, DadoViciado())
-    assert resultado.valor == 15 // combate.REDUCAO_DEFESA  # 15 vira 3
+    assert resultado.valor == (orc.ataque * 2 - heroi.defesa) // combate.REDUCAO_DEFESA
 
 
 def test_dano_minimo_e_1():

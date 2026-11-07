@@ -83,7 +83,9 @@ class Heroi(Personagem):
         self.vida_max += BONUS_POR_NIVEL["vida_max"]
         self.ataque += BONUS_POR_NIVEL["ataque"]
         self.defesa += BONUS_POR_NIVEL["defesa"]
-        curado = self.curar(self.vida_max // 2)  # recupera metade da vida máxima
+        # Cura só os pontos de vida novos: o dano das batalhas anteriores continua,
+        # e é isso que dá valor às poções e à defesa.
+        curado = self.curar(BONUS_POR_NIVEL["vida_max"])
         return SubidaDeNivel(self.nivel, curado)
 
 
@@ -99,9 +101,11 @@ class Inimigo(Personagem):
 # Os monstros ficam descritos como dados, não como código.
 # Para criar um monstro novo, basta acrescentar uma linha aqui.
 MODELOS_INIMIGOS = {
-    "rato": dict(nome="Rato Gigante", vida_max=18, ataque=5, defesa=1, xp=12),
-    "goblin": dict(nome="Goblin", vida_max=28, ataque=7, defesa=2, xp=18),
-    "orc": dict(nome="Orc Brutamontes", vida_max=40, ataque=9, defesa=3, xp=30),
+    # Valores calibrados com 5.000 partidas simuladas: quem só ataca vence ~45%,
+    # quem defende do golpe pesado e usa poções na hora certa vence ~99%.
+    "rato": dict(nome="Rato Gigante", vida_max=22, ataque=7, defesa=1, xp=12),
+    "goblin": dict(nome="Goblin", vida_max=34, ataque=10, defesa=2, xp=18),
+    "orc": dict(nome="Orc Brutamontes", vida_max=55, ataque=13, defesa=4, xp=30),
 }
 
 

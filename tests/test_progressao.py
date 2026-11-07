@@ -35,6 +35,13 @@ def test_cura_da_subida_nao_passa_do_maximo():
     assert subida.curado == BONUS_POR_NIVEL["vida_max"]  # só os pontos novos de vida máxima
 
 
+def test_subir_nivel_nao_apaga_o_dano_recebido():
+    heroi = criar_heroi("Teste")
+    heroi.receber_dano(30)  # 50 → 20
+    heroi.ganhar_xp(XP_POR_NIVEL)
+    assert heroi.vida == 20 + BONUS_POR_NIVEL["vida_max"]  # só os pontos novos
+
+
 def test_muito_xp_sobe_varios_niveis():
     heroi = criar_heroi("Teste")
     subidas = heroi.ganhar_xp(10 + 20 + 5)  # nível 1→2 (10) e 2→3 (20), sobram 5
