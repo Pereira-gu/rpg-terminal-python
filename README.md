@@ -98,3 +98,7 @@ python -m pytest
 - [x] Etapa 6: simulador de balanceamento, gráficos e documentação
 
 **Ideias para o futuro:** salvar e carregar partidas em JSON, classes de personagem (guerreiro e mago) e um ranking de partidas.
+
+## Licença
+
+[MIT](LICENSE)
