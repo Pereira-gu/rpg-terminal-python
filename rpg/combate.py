@@ -12,11 +12,14 @@ para saber exatamente o que vai acontecer.
 import random
 from dataclasses import dataclass
 
-from rpg.personagem import Heroi, Personagem
+from rpg.personagem import Heroi, Inimigo, Personagem
 
 CHANCE_CRITICO = 0.10  # 10% de chance de dano dobrado
 VARIACAO_DANO = 2  # o dano varia de -2 a +2 a cada golpe
 CURA_POCAO = 20
+REDUCAO_DEFESA = 4  # defendendo, o dano é dividido por 4 (bloqueia 75%)
+CHANCE_PREPARAR = 0.30  # 30% de chance de o inimigo preparar um golpe pesado
+MULTIPLICADOR_PESADO = 2  # o golpe pesado tem o dobro da força
 
 
 @dataclass
@@ -24,21 +27,23 @@ class Resultado:
     """O que aconteceu em uma ação, para a interface descrever."""
 
     ator: str
-    acao: str  # "atacar", "defender", "pocao" ou "sem_pocao"
+    acao: str  # "atacar", "defender", "pocao", "sem_pocao", "preparar" ou "golpe_pesado"
     alvo: str = ""
     valor: int = 0  # dano causado ou vida curada
     critico: bool = False
 
 
-def calcular_dano(atacante: Personagem, defensor: Personagem, rng: random.Random) -> tuple[int, bool]:
+def calcular_dano(
+    atacante: Personagem, defensor: Personagem, rng: random.Random, multiplicador: int = 1
+) -> tuple[int, bool]:
     """Retorna (dano, foi_critico). O dano mínimo é 1, para todo golpe contar."""
-    dano = atacante.ataque + rng.randint(-VARIACAO_DANO, VARIACAO_DANO)
+    dano = (atacante.ataque + rng.randint(-VARIACAO_DANO, VARIACAO_DANO)) * multiplicador
     critico = rng.random() < CHANCE_CRITICO
     if critico:
         dano *= 2
     dano -= defensor.defesa
     if defensor.defendendo:
-        dano //= 2  # defender corta o dano pela metade
+        dano //= REDUCAO_DEFESA
     return max(1, dano), critico
 
 
@@ -74,7 +79,19 @@ def turno_heroi(heroi: Heroi, inimigo: Personagem, escolha: str, rng: random.Ran
     raise ValueError(f"Ação desconhecida: {escolha}")
 
 
-def turno_inimigo(inimigo: Personagem, heroi: Heroi, rng: random.Random) -> Resultado:
-    """Por enquanto o inimigo sempre ataca. Na etapa 5 o chefe terá um ataque especial."""
-    inimigo.defendendo = False
+def turno_inimigo(inimigo: Inimigo, heroi: Heroi, rng: random.Random) -> Resultado:
+    """O inimigo ataca normalmente, prepara um golpe pesado ou solta o golpe preparado.
+
+    O golpe pesado é anunciado um turno antes: é a deixa para o jogador defender.
+    """
+    if inimigo.preparando:
+        inimigo.preparando = False
+        dano, critico = calcular_dano(inimigo, heroi, rng, MULTIPLICADOR_PESADO)
+        heroi.receber_dano(dano)
+        return Resultado(inimigo.nome, "golpe_pesado", heroi.nome, dano, critico)
+
+    if rng.random() < CHANCE_PREPARAR:
+        inimigo.preparando = True
+        return Resultado(inimigo.nome, "preparar")
+
     return atacar(inimigo, heroi, rng)

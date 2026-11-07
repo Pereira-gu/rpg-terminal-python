@@ -36,11 +36,36 @@ def test_critico_dobra_o_dano_antes_da_defesa():
     assert critico
 
 
-def test_defender_corta_o_dano_pela_metade():
+def test_defender_bloqueia_75_por_cento():
     heroi, orc = criar_heroi("Teste"), criar_inimigo("orc")
     combate.defender(heroi)
     dano, _ = combate.calcular_dano(orc, heroi, DadoViciado())
-    assert dano == (orc.ataque - heroi.defesa) // 2  # (9 - 3) // 2 = 3
+    assert dano == max(1, (orc.ataque - heroi.defesa) // combate.REDUCAO_DEFESA)  # 6 // 4 = 1
+
+
+def test_inimigo_prepara_golpe_pesado():
+    heroi, orc = criar_heroi("Teste"), criar_inimigo("orc")
+    resultado = combate.turno_inimigo(orc, heroi, DadoViciado(chance=0.0))
+    assert resultado.acao == "preparar"
+    assert orc.preparando
+    assert heroi.vida == heroi.vida_max  # preparar não causa dano
+
+
+def test_golpe_pesado_dobra_a_forca_e_zera_preparo():
+    heroi, orc = criar_heroi("Teste"), criar_inimigo("orc")
+    orc.preparando = True
+    resultado = combate.turno_inimigo(orc, heroi, DadoViciado())
+    assert resultado.acao == "golpe_pesado"
+    assert resultado.valor == orc.ataque * 2 - heroi.defesa  # 18 - 3 = 15
+    assert not orc.preparando
+
+
+def test_defender_contra_golpe_pesado_compensa():
+    heroi, orc = criar_heroi("Teste"), criar_inimigo("orc")
+    orc.preparando = True
+    combate.defender(heroi)
+    resultado = combate.turno_inimigo(orc, heroi, DadoViciado())
+    assert resultado.valor == 15 // combate.REDUCAO_DEFESA  # 15 vira 3
 
 
 def test_dano_minimo_e_1():

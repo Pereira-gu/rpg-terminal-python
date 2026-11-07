@@ -52,6 +52,8 @@ class Inimigo(Personagem):
     """Um monstro. O XP será usado na etapa 2 (subir de nível)."""
 
     xp: int = 10
+    # True quando o monstro está carregando um golpe pesado para o próximo turno.
+    preparando: bool = False
 
 
 # Os monstros ficam descritos como dados, não como código.

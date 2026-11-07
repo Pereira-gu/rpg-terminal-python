@@ -8,15 +8,20 @@ from rpg.personagem import Heroi, Inimigo, criar_heroi, criar_inimigo
 SEQUENCIA_INIMIGOS = ["rato", "goblin", "orc"]
 
 
-def batalha(heroi: Heroi, inimigo: Inimigo, rng: random.Random) -> bool:
+def batalha(heroi: Heroi, inimigo: Inimigo, numero: int, total: int, rng: random.Random) -> bool:
     """Roda uma batalha até alguém cair. Retorna True se o herói venceu."""
+    turno = 1
+    log: list[str] = []  # frases do último turno, mostradas no painel
     while heroi.vivo and inimigo.vivo:
-        interface.mostrar_status(heroi, inimigo)
-        escolha = interface.escolher_acao()
-        interface.descrever(combate.turno_heroi(heroi, inimigo, escolha, rng))
-
+        interface.tela_turno(heroi, inimigo, numero, total, turno, log)
+        escolha = interface.escolher_acao(heroi)
+        log = [interface.texto(combate.turno_heroi(heroi, inimigo, escolha, rng))]
         if inimigo.vivo:
-            interface.descrever(combate.turno_inimigo(inimigo, heroi, rng))
+            log.append(interface.texto(combate.turno_inimigo(inimigo, heroi, rng)))
+        turno += 1
+
+    # Mostra a tela uma última vez, para o jogador ver o golpe final.
+    interface.tela_turno(heroi, inimigo, numero, total, turno, log)
     return heroi.vivo
 
 
@@ -28,7 +33,7 @@ def main() -> None:
     for numero, tipo in enumerate(SEQUENCIA_INIMIGOS, start=1):
         inimigo = criar_inimigo(tipo)
         interface.anunciar_inimigo(inimigo, numero, len(SEQUENCIA_INIMIGOS))
-        if not batalha(heroi, inimigo, rng):
+        if not batalha(heroi, inimigo, numero, len(SEQUENCIA_INIMIGOS), rng):
             interface.fim_de_jogo(venceu=False, heroi=heroi)
             return
         interface.vitoria_batalha(inimigo)
